@@ -14,19 +14,22 @@ namespace GeneticApproximation
     
         /*Количество хромосом в геноме - тобишь коэффициенты в полиноме*/
         private static int cromosomCount = 5;
-        private static double[] genom = new double[cromosomCount];  //массив коэффициентов
+        private static double[] genom;  //массив коэффициентов
+        private static List<double[]> GenomList; // массив геномов
         private static double[] PolynFunctionList;
         private static double[,] ApproxFuncCoordinates;
         private static int PairsCoordinateCount; // сколько точек подаются на вход
+        private static Random rnd = new Random();
         /*Максимальное количество поколений (итераций)*/
         int maxGeneration = 100;
+
         /*Максимальный размер популяции - геномов в популяции*/
-        private static int populationMaxSize = 100;
+        private static int populationMaxSize = 5;
         /*Вероятность мутации*/
         double MutationPosibility = 0.1;
         /*Вероятность скрещивания*/
         double CrossoverPosibility = 0.9;
-        /*Кольичество особей, отбираемых в каждом поколении*/
+        /*Количество особей, отбираемых в каждом поколении*/
         int SelectCount = 64;
         #endregion 
 
@@ -74,36 +77,38 @@ namespace GeneticApproximation
             return ApproxFuncCoordinates;
 
         }
-
         //Начальный геном заполняем рандомно
-        private static double[] getGenom_start(int k)
+        private static double[] getGenom_start()
         {
-            Random rnd = new Random();
+           genom = new double[cromosomCount];
+           GenomList = new List<double[]>();
             for (int i = 0; i < genom.Length; i++)
             {
-                genom[i] = rnd.Next(-500, 500) * k;
-               //Console.WriteLine("genom " + genom[i]);
+               genom[i] = rnd.Next(-500, 500);
+               Console.WriteLine("genom " + genom[i]);
             }
-            k++;
+            GenomList.Add(genom);
             return genom;
         }
 
         //Считаем полином по всем данным х-ам (которые подавались на вход), со сгенеринными коэффициентами
-        private static void getPolynFunctionList()
-        {         
+        private static void getPolynFunctionList(double[] genom)
+        {             
             for (int j = 0; j < PairsCoordinateCount; j++)
             {
-                PolynFunctionList[j] = genom[0] * Math.Pow(ApproxFuncCoordinates[j, 0], 4) + genom[1] * Math.Pow(ApproxFuncCoordinates[j, 0], 3) + genom[2] * Math.Pow(ApproxFuncCoordinates[j, 0], 2) + genom[3] * ApproxFuncCoordinates[j, 0] + genom[4];
-                //Console.WriteLine( "f = "+ PolynFunctionList[j]);
+                PolynFunctionList[j] = genom[0] * Math.Pow(ApproxFuncCoordinates[j, 0], 4) + 
+                    genom[1] * Math.Pow(ApproxFuncCoordinates[j, 0], 3) +
+                    genom[2] * Math.Pow(ApproxFuncCoordinates[j, 0], 2) + 
+                    genom[3] * ApproxFuncCoordinates[j, 0] + genom[4];
+                Console.WriteLine( "f = "+ PolynFunctionList[j]);
             }     
         }
         //Cоздаем начальную популяцию рандомно
         private static void GenericPopulation_Start()
         {
-            for (int i = 1; i <= 5/*populationMaxSize*/; i++)
+            for (int i = 0; i < populationMaxSize; i++)
             {
-                getGenom_start(i); //  i нужно, чтобы он каждый раз создавал заново рандом
-                getPolynFunctionList();
+                getPolynFunctionList(getGenom_start());
                 fitnessFunction();
             }
 
@@ -123,14 +128,38 @@ namespace GeneticApproximation
                 sum = sum + Math.Pow((PolynFunctionList[i] - ApproxFuncCoordinates[i,1]), 2); 
             }
             Console.WriteLine("sum " + sum);
-            return sum;
-        }
+            return sum; 
+        }// надо ее уменьшить. 
 
-      /*  private static double[] GenomCrossover()
+        private static double[] GenomCrossover(double[] parentGenom1, double[] parentGenom2)
         {
-
+           double[] childGenom = new double[cromosomCount];
+           
+            for (int i = 0; i < cromosomCount; i++)
+            {
+                int flag = rnd.Next(0, 1);
+                if (flag == 0)
+                {
+                    childGenom[i] = parentGenom1[i];
+                }
+                else
+                {
+                    childGenom[i] = parentGenom2[i];
+                }
+            }
+            return childGenom;
         }
 
+        private static void NewCrossoverPopulation()
+        {
+            for (int i = 0; i < populationMaxSize; i++)
+                for (int j = i + 1; j < populationMaxSize; j++)
+                {
+                   // GenomCrossover();
+                }
+
+        }
+        /*
         private static double[] GenomMutation()
         {
 
