@@ -15,7 +15,9 @@ namespace GeneticApproximation
         /*Количество хромосом в геноме - тобишь коэффициенты в полиноме*/
         private static int cromosomCount = 5;
         private static double[] genom;  //массив коэффициентов
-        private static List<double[]> GenomList; // массив геномов
+        private static List<double[]> GenomOldList; // массив геномов
+        private static List<double[]> GenomCrossList; // массив геномов после скрещивания
+        private static List<double[]> GenomMutantList; // массив геномов после мутации
         private static double[] PolynFunctionList;
         private static double[,] ApproxFuncCoordinates;
         private static int PairsCoordinateCount; // сколько точек подаются на вход
@@ -81,13 +83,13 @@ namespace GeneticApproximation
         private static double[] getGenom_start()
         {
            genom = new double[cromosomCount];
-           GenomList = new List<double[]>();
+           GenomOldList = new List<double[]>();
             for (int i = 0; i < genom.Length; i++)
             {
                genom[i] = rnd.Next(-500, 500);
                Console.WriteLine("genom " + genom[i]);
             }
-            GenomList.Add(genom);
+            GenomOldList.Add(genom);
             return genom;
         }
 
@@ -131,6 +133,7 @@ namespace GeneticApproximation
             return sum; 
         }// надо ее уменьшить. 
 
+        // скрещивание от двух родителей
         private static double[] GenomCrossover(double[] parentGenom1, double[] parentGenom2)
         {
            double[] childGenom = new double[cromosomCount];
@@ -150,20 +153,34 @@ namespace GeneticApproximation
             return childGenom;
         }
 
+        // новое поколение геномов, записанные в список GenomCrossList после скрещивания
         private static void NewCrossoverPopulation()
         {
+            double[] crossgenom = new double[cromosomCount];
             for (int i = 0; i < populationMaxSize; i++)
                 for (int j = i + 1; j < populationMaxSize; j++)
                 {
-                   // GenomCrossover();
-                }
+                   crossgenom = GenomCrossover(GenomOldList[i],GenomOldList[j]);
+                   GenomCrossList.Add(crossgenom);
+                } 
 
         }
-        /*
-        private static double[] GenomMutation()
+        // мутация генома
+        private static double[] GenomMutation(double[] crossgenom)
         {
-
-        }*/
+            int chrom = rnd.Next(0, crossgenom.Length);
+            crossgenom[chrom] = rnd.Next(-500, 500);
+            return crossgenom;
+        }
+        //популяция мутировавших геномов
+        private static void NewPopulation()
+        {
+            foreach (double[] crossgenom in GenomCrossList)
+            {
+                double[] mutationgenom = GenomMutation(crossgenom);
+                GenomMutantList.Add(mutationgenom);
+            }
+        }
 
         static void Main(string[] args)
         {
