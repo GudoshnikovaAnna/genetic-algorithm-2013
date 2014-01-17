@@ -102,7 +102,7 @@ namespace GeneticApproximation
                     genom[1] * Math.Pow(ApproxFuncCoordinates[j, 0], 3) +
                     genom[2] * Math.Pow(ApproxFuncCoordinates[j, 0], 2) + 
                     genom[3] * ApproxFuncCoordinates[j, 0] + genom[4];
-                Console.WriteLine( "f = "+ PolynFunctionList[j]);
+               // Console.WriteLine( "f = "+ PolynFunctionList[j]);
             }     
         }
         
@@ -171,7 +171,7 @@ namespace GeneticApproximation
             {
                 sum = sum + Math.Pow((PolynFunctionList[i] - ApproxFuncCoordinates[i,1]), 2); 
             }
-            Console.WriteLine("sum " + sum);
+           // Console.WriteLine("sum " + sum);
             return sum; 
         }// надо ее уменьшить. 
 
@@ -188,47 +188,70 @@ namespace GeneticApproximation
         }
 
         // новое поколение геномов, записанные в список GenomCrossList после скрещивания
-        private static void NewCrossoverPopulation()
+        /*ОЛОЛОЛ*/
+        private static List<double[]> NewCrossoverPopulation()
         {
-            
+            List<double[]> selectPopulation =  getGenomsForSelection(GenericStartPopulation());
+            double[] newgenom;
+            List<double[]> NewPopulation = new List<double[]>();
+            for (int i = 0; i < selectPopulation.Count - 1 ; i++)
+            {
+                for (int j = i + 1; j < selectPopulation.Count; j++)
+                {
+                    newgenom = GenomCrossover(selectPopulation[i], selectPopulation[j]);
+                    NewPopulation.Add(newgenom);
+                }
+            }
+            return NewPopulation;
         }
+
 
         // мутация генома
         private static double[] GenomMutation(double[] crossgenom)
         {
             int chrom = rnd.Next(0, crossgenom.Length-1);
             crossgenom[chrom] = rnd.Next(-500, 500);
+            Console.WriteLine("mutant gen " + crossgenom[chrom]);
+            Console.WriteLine();
             return crossgenom;
         }
         //популяция мутировавших геномов
-        private static void NewPopulation()
+        private static List<double[]> NewPopulation()
         {
-            for (int i = 0; i < 29; i++)
+
+            int MutantNumber = 5;
+            double[] Mutantgenom;//геном, который мутирует
+            List<double[]> XMen = new List<double[]>();//окончательное новое поколение после скрещивания и мутации
+            List<double[]> CrossPop = NewCrossoverPopulation();
+            XMen = CrossPop;
+            int[] mutantIndex = new int[MutantNumber]; // индексы мутировавших геномов
+            
+            for (int i = 0; i < MutantNumber; i++)
+                mutantIndex[i] = -1;
+            for (int i = 0; i < MutantNumber; i++)
             {
-                int k = rnd.Next(0, populationMaxSize-1);
-
-            }
-
-                foreach (double[] crossgenom in GenomCrossList)
+                int k = rnd.Next(0, CrossPop.Count - 1);
+                if (!mutantIndex.Contains(k)) //проверяем, не мутировал ли уже этот геном, если нет - велкам
                 {
-                    double[] mutationgenom = GenomMutation(crossgenom);
-                    GenomMutantList.Add(mutationgenom);
+                    Mutantgenom = GenomMutation(CrossPop[k]);
+                    mutantIndex[i] = k;
+                    XMen.RemoveAt(k); //удаляем старый геном
+                    XMen.Insert(k, Mutantgenom); //вписываем новый, мутировавший
                 }
+            }
+            return XMen;
         }
 
-        private static void Selection()
-        {
-            
-            
-        }
-
+       
         static void Main(string[] args)
         {
             ApproxFuncCoordinates = GetApproxFuncCoordinates();
-            getGenomsForSelection(GenericStartPopulation());
+            //getGenomsForSelection(GenericStartPopulation());
+            
            //Console.WriteLine("Count old list " + GenomOldList.Count());
            // GenericPopulation_Start();
             //NewCrossoverPopulation();
+            NewPopulation();
             Console.WriteLine("Finish");
             Console.Read();
         }
