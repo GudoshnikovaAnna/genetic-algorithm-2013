@@ -14,8 +14,6 @@ namespace GeneticApproximation
     
         /*Количество хромосом в геноме - тобишь коэффициенты в полиноме*/
         private static int cromosomCount = 5;
-        private static double[] genom;  //массив коэффициентов
-        private static List<double[]> GenomOldList; // массив геномов
         private static List<double[]> GenomCrossList; // массив геномов после скрещивания
         private static List<double[]> GenomMutantList; // массив геномов после мутации
         private static double[] PolynFunctionList;
@@ -28,13 +26,13 @@ namespace GeneticApproximation
         int maxGeneration = 100;
 
         /*Максимальный размер популяции - геномов в популяции*/
-        private static int populationMaxSize = 20;
+        private static int populationMaxSize = 10;
         /*Вероятность мутации*/
         double MutationPosibility = 0.1;
         /*Вероятность скрещивания*/
         double CrossoverPosibility = 0.9;
         /*Количество особей, отбираемых в каждом поколении*/
-        static int SelectCount = 10;
+        static int SelectCount = 5;
         #endregion 
 
         /*Функция для получения матрицы координат апроксимируемой функции*/
@@ -84,7 +82,7 @@ namespace GeneticApproximation
         //Начальный геном заполняем рандомно
         private static double[] getGenom_start()
         {
-           genom = new double[cromosomCount];
+           double[] genom = new double[cromosomCount];
            Console.WriteLine("genom:");
             for (int i = 0; i < genom.Length; i++)
             {
@@ -108,20 +106,38 @@ namespace GeneticApproximation
             }     
         }
         
-        private static void GenericStartPopulation()
+        private static List<double[]> GenericStartPopulation()
         {
-            GenomOldList = new List<double[]>();
-            //fitnessResult = new List<double[]>(); //список из массивов=геном+фитфункция
-            Dictionary<double, double[]> FitnessGenom = new Dictionary<double, double[]>();
-            double[] fitvalue = new double[populationMaxSize]; //значения фитфункции
-            double[] genomFitValue = new double[cromosomCount + 1]; //геном + значение фитнес-функции
+            List<double[]> StartPopulation = new List<double[]>();
+            double[] genom;
             for (int i = 0; i < populationMaxSize; i++)
             {
-                getGenom_start(); //генерируем популяцию
-                GenomOldList.Add(genom);
-                getPolynFunctionList(genom); //считаем значения полинома с коэффициентами-хромосомами генома
-                FitnessGenom[fitnessFunction()] = genom;
-                fitvalue[i] = fitnessFunction();
+                genom = getGenom_start(); //генерируем геном
+                StartPopulation.Add(genom);
+            }
+            return StartPopulation;
+        }
+
+        private static List<double[]> getGenomsForSelection(List<double[]> population)
+        {
+            List<double[]> bestGenom = new List<double[]>();//геномы с лучшими фитнес-функциями
+            Dictionary<double, double[]> FitnessGenom = new Dictionary<double, double[]>();//ключ - значение фитнес-функции, значение - соответствующий геном
+            double[] fitvalue = new double[populationMaxSize]; //значения фитфункции
+            double[] genomFitValue = new double[cromosomCount + 1]; //геном + значение фитнес-функции
+            List<double> tempFitFuncValue = new List<double>(); //временный список, чтобы сохранить значения фитнес-функций
+
+            foreach (var genom in population)
+            {
+                getPolynFunctionList(genom); //посчитали полиномы с коэффициентами-хромосомами для всех входных иксов
+                double temp = fitnessFunction(); //посчитали фитнес-функцию для текущего генома
+                tempFitFuncValue.Add(temp);//добавили значение в список
+                FitnessGenom[temp] = genom;//добавили значение в словарь
+            }
+            
+            /*переносим список в массив, чтобы быстро автоматически отсортировать потом*/
+            for (int i = 0; i < tempFitFuncValue.Count; i++)
+            {
+                fitvalue[i] = tempFitFuncValue[i];
             }
 
             Array.Sort(fitvalue); //сортируем значения фитнес-функций по возрастанию
@@ -131,7 +147,6 @@ namespace GeneticApproximation
                 SelectedFitValue[k] = fitvalue[k];
             }
 
-            List<double[]> bestGenom = new List<double[]>();//геномы с лучшими фитнес-функциями
             foreach (var elem in FitnessGenom)
             {
                 if (SelectedFitValue.Contains(elem.Key))
@@ -139,6 +154,7 @@ namespace GeneticApproximation
                     bestGenom.Add(elem.Value);
                 }
             }
+            return bestGenom;
         }
 
         /*Надо посчитать фитнесс функцию - фукнцию приспособленности. 
@@ -171,28 +187,10 @@ namespace GeneticApproximation
             return childGenom;
         }
 
-        
-
         // новое поколение геномов, записанные в список GenomCrossList после скрещивания
         private static void NewCrossoverPopulation()
         {
-            GenomCrossList = new List<double[]>();
-            double[] crossgenom = new double[cromosomCount];
-            double[] testArr = new double[5];
-            testArr = GenomOldList[1];
-            Console.WriteLine("GenomOldList");
-            for (int t = 0; t < 5; t++)
-            {
-                Console.Write(" " + testArr[t]);
-            }
-            for (int i = 0; i < populationMaxSize-1; i++)
-                for (int j = i + 1; j < populationMaxSize; j++)
-                {
-                    
-                    //crossgenom = GenomCrossover(GenomOldList[i],GenomOldList[j]);
-                    //GenomCrossList.Add(crossgenom);
-                }
-            //Console.Out.WriteLine(GenomCrossList.Count());
+            
         }
 
         // мутация генома
@@ -227,7 +225,7 @@ namespace GeneticApproximation
         static void Main(string[] args)
         {
             ApproxFuncCoordinates = GetApproxFuncCoordinates();
-            GenericStartPopulation();
+            getGenomsForSelection(GenericStartPopulation());
            //Console.WriteLine("Count old list " + GenomOldList.Count());
            // GenericPopulation_Start();
             //NewCrossoverPopulation();
